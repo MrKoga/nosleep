@@ -1,0 +1,75 @@
+#!/bin/zsh
+# nosleep — keep a MacBook running with the lid closed, and put it to sleep on demand.
+#
+#   nosleep -on       keep running through every lid close until you run -off
+#   nosleep -off      back to normal: closing the lid sleeps the Mac
+#   nosleep -sleep    back to normal, then put the Mac to sleep right now
+#   nosleep           print usage and whether nosleep is currently on
+#
+# How it works: `pmset -a disablesleep 1` is the one macOS switch that keeps a
+# MacBook awake with the lid shut. While it is set the Mac never sleeps at all
+# (not when idle, not from the Apple menu, not on battery), so remember -off.
+# The sudo calls below run without a password because install.sh adds an
+# exact-match rule for these three commands to /etc/sudoers.d/nosleep.
+# Companion: lidlock-watch (a LaunchAgent, also installed by install.sh) turns
+# the display off when the lid closes while nosleep is on, so the normal
+# screen lock still engages even though the Mac keeps running.
+
+STATE_DIR="$HOME/.local/state"
+MARKER="$STATE_DIR/nosleep.on"
+mkdir -p "$STATE_DIR"
+
+is_on() { [[ -f "$MARKER" ]]; }
+sleep_disabled() { pmset -g | awk '/SleepDisabled/{print $2}'; }
+
+turn_off() {
+  rm -f "$MARKER"
+  sudo /usr/bin/pmset -a disablesleep 0
+}
+
+usage() {
+  echo "nosleep — keep the Mac running with the lid closed, or put it to sleep"
+  echo "  nosleep -on       stay awake through every lid close until -off"
+  echo "  nosleep -off      restore normal sleep behavior"
+  echo "  nosleep -sleep    restore normal sleep behavior, then sleep right now"
+}
+
+case "$1" in
+  -on)
+    if is_on; then
+      echo "nosleep is already on. The Mac keeps running through lid closes. 'nosleep -off' restores normal sleep."
+      exit 0
+    fi
+    sudo /usr/bin/pmset -a disablesleep 1 || exit 1
+    touch "$MARKER"
+    echo "nosleep on. The Mac keeps running through every lid close until 'nosleep -off'."
+    ;;
+
+  -off)
+    turn_off || exit 1
+    echo "nosleep off. Normal sleep behavior restored (SleepDisabled=$(sleep_disabled))."
+    ;;
+
+  -sleep)
+    turn_off || exit 1
+    echo "going to sleep now. Normal sleep behavior on wake."
+    sudo /usr/bin/pmset sleepnow
+    ;;
+
+  ""|-h|--help|help)
+    usage
+    sd=$(sleep_disabled)
+    if is_on; then
+      echo "status: on (SleepDisabled=${sd:-?})"
+    elif [[ "$sd" == "1" ]]; then
+      echo "status: SleepDisabled=1 but nosleep did not set it. 'nosleep -off' clears it."
+    else
+      echo "status: off (normal sleep behavior)"
+    fi
+    ;;
+
+  *)
+    echo "nosleep: unknown option '$1' (use -on, -off, or -sleep)" >&2
+    exit 2
+    ;;
+esac

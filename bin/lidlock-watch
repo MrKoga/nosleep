@@ -1,0 +1,19 @@
+#!/bin/zsh
+# lidlock-watch — companion to nosleep. Runs all the time as a LaunchAgent.
+# When nosleep is on, closing the lid no longer turns the display off, so the
+# screen stays lit inside the closed lid and the normal "require password after
+# the display turns off" lock never engages. This loop checks the lid every 2
+# seconds; the moment it closes, it turns the DISPLAY off (the Mac keeps
+# running), which engages the screen lock as usual.
+# When nosleep is off this is harmless: the display was about to turn off anyway.
+# Caveat: it also blanks an external monitor on lid close, so for clamshell mode
+# with an external display, pause it first (see README).
+prev="No"
+while true; do
+  cur=$(ioreg -r -k AppleClamshellState -d 1 2>/dev/null | awk -F'= ' '/AppleClamshellState/{print $2; exit}')
+  if [[ "$cur" == "Yes" && "$prev" == "No" ]]; then
+    pmset displaysleepnow
+  fi
+  [[ -n "$cur" ]] && prev="$cur"
+  sleep 2
+done
