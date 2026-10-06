@@ -22,9 +22,15 @@ mkdir -p "$STATE_DIR"
 is_on() { [[ -f "$MARKER" ]]; }
 sleep_disabled() { pmset -g | awk '/SleepDisabled/{print $2}'; }
 
+# If the optional menu bar item (the SwiftBar plugin in the menubar folder) is running, ask it
+# to re-read the state now instead of at its next poll.
+# Does nothing when SwiftBar is not running, and never launches it.
+refresh_menubar() { pgrep -xq SwiftBar && open -g "swiftbar://refreshplugin?name=nosleep" 2>/dev/null; return 0; }
+
 turn_off() {
   rm -f "$MARKER"
-  sudo /usr/bin/pmset -a disablesleep 0
+  sudo /usr/bin/pmset -a disablesleep 0 || return 1
+  refresh_menubar
 }
 
 usage() {
@@ -42,6 +48,7 @@ case "$1" in
     fi
     sudo /usr/bin/pmset -a disablesleep 1 || exit 1
     touch "$MARKER"
+    refresh_menubar
     echo "nosleep on. The Mac keeps running through every lid close until 'nosleep -off'."
     ;;
 

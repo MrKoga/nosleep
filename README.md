@@ -28,7 +28,7 @@ Closing a MacBook's lid puts it to sleep, and there is no checkbox in System Set
 
 ## Install
 
-1. Get the files. Either download https://github.com/mrkoga/nosleep/archive/refs/heads/main.zip and unzip it (the folder is called `nosleep-main`), or run `git clone https://github.com/mrkoga/nosleep.git` in Terminal. On the GitHub page, the green "Code" button also has a "Download ZIP" option.
+1. Get the files. Download https://github.com/mrkoga/nosleep/archive/refs/heads/main.zip and unzip it (the folder is called `nosleep-main`), or run `git clone https://github.com/mrkoga/nosleep.git` in Terminal. On the GitHub page, the green "Code" button also has a "Download ZIP" option. If someone sent you the zip directly, just unzip that.
 2. Open Terminal.
 3. Move into the folder: `cd` followed by a space, then drag the folder onto the Terminal window and press Return.
 4. Optional: see what the installer would do without changing anything: `./install.sh --dry-run`
@@ -61,6 +61,10 @@ Over SSH, `nosleep -sleep` is a one-way door: waking the Mac again needs a physi
 launchctl bootout gui/$(id -u)/local.nosleep.lidlock
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.nosleep.lidlock.plist
 ```
+
+## Optional: a menu bar indicator
+
+If you want to see at a glance whether nosleep is on, the `menubar` folder inside this one adds a small "nosleep ON" / "nosleep OFF" box at the top of the screen, with a dropdown to turn it on or off. It is built on the free SwiftBar app and has its own README and installer. Install nosleep first, then that.
 
 ## Troubleshooting
 
